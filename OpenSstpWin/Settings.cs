@@ -7,8 +7,8 @@ namespace OpenSstpWin
     // The password is intentionally never saved.
     internal sealed class Settings
     {
-        public string Server { get; set; } = "";
-        public string Username { get; set; } = "";
+        public string Server { get; set; } = "public-vpn-219.opengw.net";
+        public string Username { get; set; } = "vpn";
         public bool UseDefaultGateway { get; set; } = true;
 
         private static string FilePath => Path.Combine(

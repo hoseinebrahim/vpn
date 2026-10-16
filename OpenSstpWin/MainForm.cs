@@ -116,6 +116,7 @@ namespace OpenSstpWin
             txtServer.Text = s.Server;
             txtUser.Text = s.Username;
             chkGateway.Checked = s.UseDefaultGateway;
+            if (txtPass.Text.Length == 0 && s.Username == "vpn") txtPass.Text = "vpn";
         }
 
         private void SaveSettings()
