@@ -64,7 +64,10 @@ namespace OpenSstpWin
 
         private static string Quote(string value) => "'" + value.Replace("'", "''") + "'";
 
-        /// <summary>Creates or updates the Windows VPN entry.</summary>
+        /// <summary>
+        /// Always recreates the Windows VPN entry from scratch so that stale or half-configured
+        /// entries (and stale sessions) can never cause PPP/IPCP failures such as error 720.
+        /// </summary>
         internal static Task<RunResult> PrepareConnection(string server, bool useDefaultGateway)
         {
             string split = useDefaultGateway ? "$false" : "$true";
@@ -73,13 +76,22 @@ namespace OpenSstpWin
 
             string script =
                 "$ErrorActionPreference='Stop'; " +
-                "if (Get-VpnConnection -Name " + name + " -ErrorAction SilentlyContinue) { " +
-                "Set-VpnConnection -Name " + name + " -ServerAddress " + address +
-                " -TunnelType Sstp -SplitTunneling " + split + " -Force " +
-                "} else { " +
-                "Add-VpnConnection -Name " + name + " -ServerAddress " + address +
+                "$n=" + name + "; " +
+                "& rasdial.exe $n /disconnect | Out-Null; " +
+                "if (Get-VpnConnection -Name $n -ErrorAction SilentlyContinue) { Remove-VpnConnection -Name $n -Force }; " +
+                "Add-VpnConnection -Name $n -ServerAddress " + address +
                 " -TunnelType Sstp -EncryptionLevel Required -AuthenticationMethod MSChapv2" +
-                " -SplitTunneling " + split + " -Force }";
+                " -SplitTunneling " + split + " -Force";
+
+            return Run("powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", script);
+        }
+
+        /// <summary>Returns the settings Windows actually holds for the entry (for troubleshooting).</summary>
+        internal static Task<RunResult> Describe()
+        {
+            string script =
+                "Get-VpnConnection -Name " + Quote(ConnectionName) + " | " +
+                "Format-List ServerAddress,TunnelType,AuthenticationMethod,EncryptionLevel,SplitTunneling";
 
             return Run("powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", script);
         }

@@ -181,6 +181,12 @@ namespace OpenSstpWin
             RunResult dial = await VpnController.Dial(user, txtPass.Text);
             Log(dial.Output);
 
+            if (dial.Code != 0)
+            {
+                RunResult info = await VpnController.Describe();
+                Log("Connection settings used:" + Environment.NewLine + info.Output);
+            }
+
             SetBusy(false, null);
             Poll();
         }
